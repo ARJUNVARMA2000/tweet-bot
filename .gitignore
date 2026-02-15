@@ -1,0 +1,16 @@
+# Secrets
+*.pem
+*.key
+*-key.json
+.env
+
+# IDE / editor
+.claude/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

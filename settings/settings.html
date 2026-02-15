@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tweet Bot Settings</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Tweet Bot Settings</h1>
+      <p class="subtitle">Configure your AI tweet assistant</p>
+    </header>
+
+    <section class="card">
+      <h2>API Key</h2>
+      <p class="description">Your OpenRouter API key. Get one at <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a></p>
+      <div class="input-group">
+        <input type="password" id="apiKey" placeholder="sk-or-..." autocomplete="off" />
+        <button id="toggleKey" class="btn-icon" title="Show/hide key">Show</button>
+      </div>
+      <div id="keyStatus" class="status"></div>
+    </section>
+
+    <section class="card">
+      <h2>AI Model</h2>
+      <p class="description">Choose the model for generating suggestions</p>
+      <div class="model-options">
+        <label class="model-option">
+          <input type="radio" name="model" value="anthropic/claude-opus-4-6" checked />
+          <div class="model-card">
+            <strong>Opus 4.6</strong>
+            <span>Most intelligent, best for coding &amp; agents</span>
+          </div>
+        </label>
+        <label class="model-option">
+          <input type="radio" name="model" value="anthropic/claude-sonnet-4-5" />
+          <div class="model-card">
+            <strong>Sonnet 4.5</strong>
+            <span>Best speed-to-intelligence ratio</span>
+          </div>
+        </label>
+        <label class="model-option">
+          <input type="radio" name="model" value="anthropic/claude-haiku-4-5" />
+          <div class="model-card">
+            <strong>Haiku 4.5</strong>
+            <span>Fastest, most cost-effective</span>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Default Tone</h2>
+      <p class="description">The default voice for generated suggestions</p>
+      <div class="tone-options">
+        <label class="tone-option">
+          <input type="radio" name="tone" value="witty" checked />
+          <div class="tone-card">
+            <strong>Witty</strong>
+            <span>Sharp, clever, unexpected angles</span>
+          </div>
+        </label>
+        <label class="tone-option">
+          <input type="radio" name="tone" value="professional" />
+          <div class="tone-card">
+            <strong>Professional</strong>
+            <span>Thoughtful, authoritative</span>
+          </div>
+        </label>
+        <label class="tone-option">
+          <input type="radio" name="tone" value="casual" />
+          <div class="tone-card">
+            <strong>Casual</strong>
+            <span>Relaxed, conversational</span>
+          </div>
+        </label>
+        <label class="tone-option">
+          <input type="radio" name="tone" value="provocative" />
+          <div class="tone-card">
+            <strong>Provocative</strong>
+            <span>Bold, contrarian</span>
+          </div>
+        </label>
+        <label class="tone-option">
+          <input type="radio" name="tone" value="informative" />
+          <div class="tone-card">
+            <strong>Informative</strong>
+            <span>Educational, adds value</span>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Topic Interests</h2>
+      <p class="description">Topics you're interested in. The AI will reference these naturally when relevant.</p>
+      <div class="tags-container">
+        <div id="tags" class="tags"></div>
+        <div class="tag-input-group">
+          <input type="text" id="tagInput" placeholder="Add a topic..." />
+          <button id="addTag" class="btn-secondary">Add</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Statistics</h2>
+      <div class="stats-grid">
+        <div class="stat">
+          <span class="stat-value" id="totalGenerated">0</span>
+          <span class="stat-label">Generated</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="totalSelected">0</span>
+          <span class="stat-label">Selected</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="historyCount">0</span>
+          <span class="stat-label">History Items</span>
+        </div>
+      </div>
+      <button id="clearHistory" class="btn-danger">Clear History</button>
+    </section>
+
+    <section class="card">
+      <h2>API Usage</h2>
+      <p class="description">Token usage and estimated cost across all requests</p>
+      <div class="usage-grid">
+        <div class="stat">
+          <span class="stat-value" id="inputTokens">0</span>
+          <span class="stat-label">Input Tokens</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="outputTokens">0</span>
+          <span class="stat-label">Output Tokens</span>
+        </div>
+      </div>
+      <div class="usage-cost">
+        Estimated cost: <strong id="estimatedCost">$0.0000</strong>
+      </div>
+      <button id="resetUsage" class="btn-danger">Reset Usage</button>
+    </section>
+
+    <section class="card">
+      <h2>Export / Import</h2>
+      <p class="description">Back up or restore your settings, history, and usage data</p>
+      <div class="export-import-actions">
+        <button id="exportBtn" class="btn-secondary">Export Settings</button>
+        <button id="importBtn" class="btn-secondary">Import Settings</button>
+        <input type="file" id="importFile" accept=".json" style="display:none" />
+      </div>
+      <div id="importExportStatus" class="status"></div>
+    </section>
+
+    <div class="actions">
+      <button id="save" class="btn-primary">Save Settings</button>
+      <span id="saveStatus" class="save-status"></span>
+    </div>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+</html>
