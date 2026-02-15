@@ -39,7 +39,7 @@ const PopupUI = (() => {
   function show(anchorBtn, tweetData) {
     dismiss(); // Remove any existing popup
     currentTweetData = tweetData;
-    currentAction = "reply";
+    currentAction = "quote";
 
     const theme = detectTheme();
     const popup = document.createElement("div");
@@ -91,17 +91,8 @@ const PopupUI = (() => {
       </div>
 
       <div class="tweetbot-tabs">
-        <button class="tweetbot-tab tweetbot-tab-active" data-action="reply">Reply</button>
-        <button class="tweetbot-tab" data-action="quote">Quote</button>
-        <button class="tweetbot-tab" data-action="new">New</button>
-      </div>
-
-      <div class="tweetbot-new-topic" style="display:none">
-        <input type="text" class="tweetbot-topic-input" placeholder="What should the tweet be about?" />
-        <label class="tweetbot-thread-toggle">
-          <input type="checkbox" class="tweetbot-thread-checkbox" />
-          <span>Generate as thread (3-5 tweets)</span>
-        </label>
+        <button class="tweetbot-tab" data-action="reply">Reply</button>
+        <button class="tweetbot-tab tweetbot-tab-active" data-action="quote">Quote</button>
       </div>
 
       <div class="tweetbot-suggestions">
@@ -145,23 +136,8 @@ const PopupUI = (() => {
         );
         tab.classList.add("tweetbot-tab-active");
         currentAction = tab.dataset.action;
-
-        const topicInput = popup.querySelector(".tweetbot-new-topic");
-        topicInput.style.display = currentAction === "new" ? "block" : "none";
-
-        if (currentAction !== "new") {
-          generateSuggestions(popup);
-        }
-      });
-    });
-
-    // New tweet topic submission
-    const topicInput = popup.querySelector(".tweetbot-topic-input");
-    topicInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.stopPropagation();
         generateSuggestions(popup);
-      }
+      });
     });
 
     // Refinement buttons
@@ -233,16 +209,6 @@ const PopupUI = (() => {
       tweetData: currentTweetData,
       ...options,
     };
-
-    // For new tweets, include the topic and thread mode
-    if (currentAction === "new") {
-      const topicInput = popup.querySelector(".tweetbot-topic-input");
-      payload.newTweetTopic = topicInput.value.trim() || "something interesting";
-      const threadCheckbox = popup.querySelector(".tweetbot-thread-checkbox");
-      if (threadCheckbox && threadCheckbox.checked) {
-        payload.threadMode = true;
-      }
-    }
 
     // Disconnect any existing stream
     if (activePort) {

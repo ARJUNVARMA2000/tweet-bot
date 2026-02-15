@@ -229,6 +229,10 @@ function buildUserPrompt(payload) {
       prompt = `Generate 3 original tweet ideas about: ${topic}`;
     }
 
+    if (payload.clarifyingContext) {
+      prompt += `\n\nAdditional context from user:\n${payload.clarifyingContext}`;
+    }
+
     if (refineTone) prompt += `\nAdjust tone to be more: ${refineTone}`;
     if (customRefinement) prompt += `\nAdditional direction: ${customRefinement}`;
     return prompt;
@@ -388,6 +392,54 @@ chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== "tweetbot-stream") return;
 
   port.onMessage.addListener(async (message) => {
+    // ─── Clarifying Questions Handler ──────────────────────────────────────────
+    if (message.type === "GENERATE_CLARIFYING_QUESTIONS_STREAM") {
+      const { topic, threadMode } = message.payload;
+
+      try {
+        const settings = await getSettings();
+
+        if (!settings.apiKey) {
+          throw new Error("API key not configured. Please set it in the extension settings.");
+        }
+
+        const systemPrompt = "You are a tweet writing assistant. Given a topic, generate exactly 3 short clarifying questions that will help you write a better tweet. Number them 1-3. Each question should be one sentence. Focus on: target audience, desired angle/hook, and key message.";
+
+        let userPrompt = `Topic: ${topic}`;
+        if (threadMode) {
+          userPrompt += "\nThe user wants to generate a thread (3-5 tweets).";
+        }
+
+        const responseText = await callOpenRouterAPIStreaming(
+          systemPrompt,
+          [{ type: "text", text: userPrompt }],
+          settings.apiKey,
+          settings.selectedModel,
+          (delta, accumulated) => {
+            try {
+              port.postMessage({ type: "CHUNK", accumulated });
+            } catch {}
+          }
+        );
+
+        const suggestions = parseSuggestions(responseText);
+
+        try {
+          port.postMessage({ type: "DONE", suggestions, historyId: null, isThread: false });
+        } catch {}
+      } catch (err) {
+        try {
+          const errorMsg = { type: "ERROR", error: err.message };
+          if (err.rateLimited) {
+            errorMsg.rateLimited = true;
+            errorMsg.retryAfterSeconds = err.retryAfterSeconds;
+          }
+          port.postMessage(errorMsg);
+        } catch {}
+      }
+      return;
+    }
+
     if (message.type !== "GENERATE_SUGGESTIONS_STREAM") return;
 
     const payload = message.payload;

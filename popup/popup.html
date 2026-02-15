@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tweet Bot - New Tweet</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="title">Tweet Bot AI</span>
+      <div class="step-indicator">
+        <span class="step-dot active" data-step="1"></span>
+        <span class="step-dot" data-step="2"></span>
+        <span class="step-dot" data-step="3"></span>
+      </div>
+    </header>
+
+    <!-- Step 1: Topic -->
+    <section id="step-1" class="step active">
+      <h2>What should the tweet be about?</h2>
+      <textarea id="topic-input" placeholder="e.g. Why most startups fail at hiring..." rows="3"></textarea>
+      <label class="thread-toggle">
+        <input type="checkbox" id="thread-checkbox" />
+        <span>Generate as thread (3-5 tweets)</span>
+      </label>
+      <button id="btn-next" class="btn-primary" disabled>Next</button>
+    </section>
+
+    <!-- Step 2: Clarifying Questions -->
+    <section id="step-2" class="step">
+      <div id="questions-loading" class="loading">
+        <div class="spinner"></div>
+        <span>Generating questions...</span>
+      </div>
+      <div id="questions-container"></div>
+      <div id="questions-actions" style="display:none">
+        <button id="btn-back-1" class="btn-secondary">Back</button>
+        <button id="btn-generate" class="btn-primary">Generate</button>
+      </div>
+    </section>
+
+    <!-- Step 3: Results -->
+    <section id="step-3" class="step">
+      <div id="results-loading" class="loading">
+        <div class="spinner"></div>
+        <span>Generating suggestions...</span>
+      </div>
+      <div id="results-streaming"></div>
+      <div id="results-container"></div>
+      <div id="results-refinements" style="display:none">
+        <div class="refine-buttons">
+          <button class="refine-btn" data-tone="professional">Professional</button>
+          <button class="refine-btn" data-tone="shorter">Shorter</button>
+          <button class="refine-btn" data-tone="provocative">Provocative</button>
+          <button class="refine-btn" data-tone="funnier">Funnier</button>
+        </div>
+        <div class="custom-refine">
+          <input type="text" id="refine-input" placeholder="Custom direction..." />
+          <button id="refine-submit" class="btn-small">Go</button>
+        </div>
+        <button id="btn-regenerate" class="btn-secondary full-width">Regenerate</button>
+        <button id="btn-back-2" class="btn-secondary full-width">Back</button>
+      </div>
+      <div id="results-error" class="error" style="display:none"></div>
+    </section>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

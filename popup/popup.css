@@ -1,0 +1,508 @@
+/* Tweet Bot - Toolbar Popup Styles */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #0f1419;
+  color: #e7e9ea;
+  width: 400px;
+  min-height: 200px;
+  overflow-x: hidden;
+}
+
+.container {
+  padding: 16px;
+}
+
+/* ─── Header ──────────────────────────────────────────────────────────────── */
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2f3336;
+}
+
+.title {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.step-indicator {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2f3336;
+  transition: all 0.2s;
+}
+
+.step-dot.active {
+  background: #1d9bf0;
+  width: 10px;
+  height: 10px;
+}
+
+.step-dot.completed {
+  background: #00ba7c;
+}
+
+/* ─── Steps ───────────────────────────────────────────────────────────────── */
+
+.step {
+  display: none;
+}
+
+.step.active {
+  display: block;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Step 1: Topic ───────────────────────────────────────────────────────── */
+
+#step-1 h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+#topic-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #202327;
+  border: 1px solid #2f3336;
+  border-radius: 8px;
+  color: #e7e9ea;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  min-height: 60px;
+  transition: border-color 0.15s;
+}
+
+#topic-input:focus {
+  border-color: #1d9bf0;
+}
+
+.thread-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #71767b;
+}
+
+.thread-toggle:hover {
+  color: #1d9bf0;
+}
+
+.thread-toggle input {
+  accent-color: #1d9bf0;
+}
+
+/* ─── Step 2: Clarifying Questions ────────────────────────────────────────── */
+
+.question-group {
+  margin-bottom: 12px;
+}
+
+.question-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #71767b;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.question-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #202327;
+  border: 1px solid #2f3336;
+  border-radius: 8px;
+  color: #e7e9ea;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.question-input:focus {
+  border-color: #1d9bf0;
+}
+
+#questions-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+#questions-actions .btn-primary {
+  flex: 1;
+}
+
+/* ─── Step 3: Results ─────────────────────────────────────────────────────── */
+
+.suggestion {
+  background: #202327;
+  border: 1px solid #2f3336;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 8px;
+  transition: border-color 0.15s;
+}
+
+.suggestion:hover {
+  border-color: #1d9bf0;
+}
+
+.strategy-tag {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #71767b;
+  margin-bottom: 4px;
+}
+
+.suggestion-text {
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  margin-bottom: 8px;
+}
+
+.suggestion-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.char-count {
+  font-size: 12px;
+  color: #71767b;
+  margin-right: auto;
+}
+
+.copy-btn {
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: rgba(29, 155, 240, 0.1);
+  color: #1d9bf0;
+  transition: all 0.15s;
+}
+
+.copy-btn:hover {
+  background: rgba(29, 155, 240, 0.2);
+}
+
+/* ─── Thread Rendering ────────────────────────────────────────────────────── */
+
+.thread-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.copy-thread-btn {
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: rgba(29, 155, 240, 0.1);
+  color: #1d9bf0;
+  transition: all 0.15s;
+}
+
+.copy-thread-btn:hover {
+  background: rgba(29, 155, 240, 0.2);
+}
+
+.thread-item {
+  display: flex;
+  gap: 12px;
+  min-height: 40px;
+}
+
+.thread-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 10px;
+}
+
+.thread-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #1d9bf0;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.thread-line {
+  width: 2px;
+  flex: 1;
+  background: #1d9bf0;
+  opacity: 0.3;
+  margin-top: 2px;
+}
+
+.thread-content {
+  flex: 1;
+  padding-bottom: 12px;
+}
+
+.thread-position {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d9bf0;
+  margin-bottom: 2px;
+  display: block;
+}
+
+/* ─── Refinements ─────────────────────────────────────────────────────────── */
+
+#results-refinements {
+  margin-top: 12px;
+}
+
+.refine-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.refine-btn {
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  cursor: pointer;
+  background: #202327;
+  color: #e7e9ea;
+  border: 1px solid #2f3336;
+  transition: all 0.15s;
+}
+
+.refine-btn:hover {
+  background: #2f3336;
+}
+
+.custom-refine {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+#refine-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: #202327;
+  border: 1px solid #2f3336;
+  border-radius: 8px;
+  color: #e7e9ea;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+#refine-input:focus {
+  border-color: #1d9bf0;
+}
+
+/* ─── Streaming ───────────────────────────────────────────────────────────── */
+
+.streaming-text {
+  background: #202327;
+  border: 1px solid #2f3336;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  opacity: 0.85;
+}
+
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: #1d9bf0;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  animation: blink 0.6s step-end infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* ─── Shared Controls ─────────────────────────────────────────────────────── */
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  color: #71767b;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(29, 155, 240, 0.2);
+  border-top-color: #1d9bf0;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.btn-primary {
+  display: block;
+  width: 100%;
+  padding: 10px 20px;
+  background: #1d9bf0;
+  border: none;
+  border-radius: 9999px;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover {
+  background: #1a8cd8;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  padding: 8px 16px;
+  background: #202327;
+  border: 1px solid #2f3336;
+  border-radius: 8px;
+  color: #e7e9ea;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-secondary:hover {
+  background: #2f3336;
+}
+
+.btn-secondary.full-width {
+  width: 100%;
+  margin-top: 6px;
+}
+
+.btn-small {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #1d9bf0;
+  color: white;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-small:hover {
+  background: #1a8cd8;
+}
+
+.error {
+  padding: 12px;
+  font-size: 13px;
+  color: #f4212e;
+  line-height: 1.4;
+}
+
+.settings-link {
+  color: #1d9bf0;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.settings-link:hover {
+  text-decoration: underline;
+}
+
+/* ─── Rate Limit Retry ────────────────────────────────────────────────────── */
+
+.retry-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  gap: 4px;
+}
+
+.retry-icon {
+  font-size: 20px;
+  font-weight: 800;
+  color: #f4212e;
+  opacity: 0.8;
+}
+
+.retry-message {
+  font-size: 14px;
+  font-weight: 600;
+  color: #71767b;
+}
+
+.retry-timer {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1d9bf0;
+  font-variant-numeric: tabular-nums;
+}
+
+.retry-attempt {
+  font-size: 12px;
+  color: #71767b;
+}
