@@ -2,7 +2,7 @@
 // Handles API calls, message routing, image fetching, and history storage
 
 const API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "anthropic/claude-opus-4-6";
+const DEFAULT_MODEL = "anthropic/claude-haiku-4-5";
 const MAX_HISTORY = 200;
 const HISTORY_CONTEXT_COUNT = 10;
 
@@ -38,9 +38,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === "GET_TOKEN_USAGE") {
-    getTokenUsage()
-      .then((usage) => {
-        sendResponse({ ...usage, estimatedCost: calculateEstimatedCost(usage) });
+    Promise.all([getTokenUsage(), getSettings()])
+      .then(([usage, settings]) => {
+        sendResponse({ ...usage, estimatedCost: calculateEstimatedCost(usage, settings.selectedModel) });
       })
       .catch((err) => sendResponse({ error: err.message }));
     return true;
@@ -133,10 +133,16 @@ async function resetTokenUsage() {
   });
 }
 
-function calculateEstimatedCost(tokenUsage) {
-  // Claude Opus 4.6 pricing: $5/M input, $25/M output
-  const inputCost = (tokenUsage.totalInputTokens / 1_000_000) * 5;
-  const outputCost = (tokenUsage.totalOutputTokens / 1_000_000) * 25;
+const MODEL_PRICING = {
+  "anthropic/claude-haiku-4-5":  { input: 0.80, output: 4 },
+  "anthropic/claude-sonnet-4-5": { input: 3,    output: 15 },
+  "anthropic/claude-opus-4-6":   { input: 15,   output: 75 },
+};
+
+function calculateEstimatedCost(tokenUsage, model) {
+  const pricing = MODEL_PRICING[model] || MODEL_PRICING[DEFAULT_MODEL];
+  const inputCost = (tokenUsage.totalInputTokens / 1_000_000) * pricing.input;
+  const outputCost = (tokenUsage.totalOutputTokens / 1_000_000) * pricing.output;
   return inputCost + outputCost;
 }
 
@@ -185,7 +191,7 @@ TONE: ${tone}
 Apply the "${tone}" tone to all suggestions.
 
 WRITING STYLE:
-Never use these words: align, crucial, delve, elaborate, emphasize, enhance, enduring, foster, garner, highlight, intricate, interplay, pivotal, showcase, tapestry, underscore, bolster, landscape, realm, arguably, innovative, groundbreaking, transformative, utilize, leverage, synergy, game-changer, unpack.
+Never use these words: align, crucial, delve, elaborate, emphasize, enhance, enduring, foster, garner, highlight, intricate, interplay, pivotal, showcase, tapestry, underscore, bolster, landscape, realm, arguably, innovative, groundbreaking, transformative, utilize, leverage, synergy, game-changer, unpack, the real unlock.
 Never use these patterns: "Not only... but also...", "Despite these challenges...", "In conclusion", "From X to Y", "It's worth noting that", "plays a pivotal role", rule-of-three filler lists, rhetorical questions that answer themselves.
 No exaggeration. No filler. No moralizing. No disclaimers. No em dashes. No flowery language. Vary sentence rhythm. Be specific and concrete. Occasionally opinionated, never sycophantic.`;
 

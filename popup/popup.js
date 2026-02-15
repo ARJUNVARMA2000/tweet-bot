@@ -38,6 +38,15 @@
   const btnRegenerate = document.getElementById("btn-regenerate");
   const btnBack2 = document.getElementById("btn-back-2");
 
+  // Quick settings refs
+  const gearBtn = document.getElementById("gear-btn");
+  const quickSettings = document.getElementById("quick-settings");
+  const quickModel = document.getElementById("quick-model");
+  const quickTone = document.getElementById("quick-tone");
+  const costBadge = document.getElementById("cost-badge");
+  const quickTokens = document.getElementById("quick-tokens");
+  const allSettingsLink = document.getElementById("all-settings-link");
+
   // ─── Step Navigation ─────────────────────────────────────────────────────────
 
   function goToStep(step) {
@@ -99,6 +108,7 @@
         activePort = null;
         clarifyingQuestions = parseQuestions(msg.suggestions);
         renderQuestions();
+        loadCostBadge();
       } else if (msg.type === "ERROR") {
         activePort = null;
         questionsLoading.style.display = "none";
@@ -254,6 +264,7 @@
         } else {
           renderSuggestions(msg.suggestions);
         }
+        loadCostBadge();
       } else if (msg.type === "ERROR") {
         activePort = null;
         resultsLoading.style.display = "none";
@@ -482,4 +493,57 @@
       document.body.removeChild(textarea);
     }
   }
+
+  // ─── Quick Settings ──────────────────────────────────────────────────────────
+
+  function formatCost(cost) {
+    if (cost < 0.01) return "$" + cost.toFixed(4);
+    return "$" + cost.toFixed(2);
+  }
+
+  function formatTokens(count) {
+    if (count >= 1_000_000) return (count / 1_000_000).toFixed(1) + "M";
+    if (count >= 1_000) return (count / 1_000).toFixed(1) + "K";
+    return String(count);
+  }
+
+  function loadQuickSettings() {
+    chrome.runtime.sendMessage({ type: "GET_SETTINGS" }, (settings) => {
+      if (settings && !settings.error) {
+        quickModel.value = settings.selectedModel;
+        quickTone.value = settings.defaultTone;
+      }
+    });
+  }
+
+  function loadCostBadge() {
+    chrome.runtime.sendMessage({ type: "GET_TOKEN_USAGE" }, (usage) => {
+      if (usage && !usage.error) {
+        costBadge.textContent = formatCost(usage.estimatedCost || 0);
+        quickTokens.textContent = `${formatTokens(usage.totalInputTokens || 0)} in / ${formatTokens(usage.totalOutputTokens || 0)} out`;
+      }
+    });
+  }
+
+  gearBtn.addEventListener("click", () => {
+    gearBtn.classList.toggle("active");
+    quickSettings.classList.toggle("open");
+  });
+
+  quickModel.addEventListener("change", () => {
+    chrome.storage.local.set({ selectedModel: quickModel.value });
+  });
+
+  quickTone.addEventListener("change", () => {
+    chrome.storage.local.set({ defaultTone: quickTone.value });
+  });
+
+  allSettingsLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    chrome.runtime.openOptionsPage();
+  });
+
+  // Init quick settings & cost
+  loadQuickSettings();
+  loadCostBadge();
 })();

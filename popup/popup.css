@@ -59,6 +59,108 @@ header {
   background: #00ba7c;
 }
 
+/* ─── Gear Button ────────────────────────────────────────────────────────── */
+
+.gear-btn {
+  background: none;
+  border: none;
+  color: #71767b;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.gear-btn:hover {
+  color: #e7e9ea;
+  background: rgba(239, 243, 244, 0.1);
+}
+
+.gear-btn.active {
+  color: #1d9bf0;
+}
+
+.gear-btn.active svg {
+  transform: rotate(45deg);
+}
+
+.gear-btn svg {
+  transition: transform 0.2s ease;
+}
+
+/* ─── Cost Badge ─────────────────────────────────────────────────────────── */
+
+.cost-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1d9bf0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ─── Quick Settings Tray ────────────────────────────────────────────────── */
+
+.quick-settings {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease;
+  border-bottom: 1px solid transparent;
+}
+
+.quick-settings.open {
+  max-height: 160px;
+  border-bottom-color: #2f3336;
+  margin-bottom: 12px;
+}
+
+.quick-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.quick-setting-row label {
+  font-size: 13px;
+  color: #71767b;
+  font-weight: 600;
+}
+
+.quick-setting-row select {
+  background: #202327;
+  border: 1px solid #2f3336;
+  border-radius: 6px;
+  color: #e7e9ea;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 4px 8px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.quick-setting-row select:focus {
+  border-color: #1d9bf0;
+}
+
+.quick-settings-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0 8px;
+  font-size: 12px;
+}
+
+.quick-tokens {
+  color: #71767b;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ─── Steps ───────────────────────────────────────────────────────────────── */
 
 .step {
