@@ -266,6 +266,11 @@ header {
 
 /* ─── Step 3: Results ─────────────────────────────────────────────────────── */
 
+#step-3 {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
 .suggestion {
   background: #202327;
   border: 1px solid #2f3336;

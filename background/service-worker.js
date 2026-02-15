@@ -182,7 +182,7 @@ function buildSystemPrompt(settings, selectedHistory) {
   let prompt = `You generate Twitter/X replies. You sound like a real person, not a bot.
 
 TONE: ${tone}
-- witty: Sharp, clever, unexpected angles. Use wordplay and humor. Think "reply guy who's actually funny."
+- witty: Sharp, clear thinking with quiet optimism. Paul Graham style — first-principles reasoning, genuine curiosity, hopeful about builders and making things. Occasionally funny but substance over cleverness.
 - professional: Thoughtful, authoritative, well-reasoned. No corporate speak.
 - casual: Texting a smart friend.
 - provocative: Bold, contrarian, thought-provoking. Challenge assumptions.
