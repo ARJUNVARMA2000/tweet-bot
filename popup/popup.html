@@ -33,16 +33,6 @@
           <option value="anthropic/claude-opus-4-6">Opus 4.6</option>
         </select>
       </div>
-      <div class="quick-setting-row">
-        <label for="quick-tone">Tone</label>
-        <select id="quick-tone">
-          <option value="witty">Witty</option>
-          <option value="professional">Professional</option>
-          <option value="casual">Casual</option>
-          <option value="provocative">Provocative</option>
-          <option value="informative">Informative</option>
-        </select>
-      </div>
       <div class="quick-settings-footer">
         <a href="#" id="all-settings-link" class="settings-link">All Settings</a>
         <span id="quick-tokens" class="quick-tokens">0 in / 0 out</span>
@@ -60,17 +50,11 @@
       <button id="btn-next" class="btn-primary" disabled>Next</button>
     </section>
 
-    <!-- Step 2: Clarifying Questions -->
+    <!-- Step 2: Pick Persona -->
     <section id="step-2" class="step">
-      <div id="questions-loading" class="loading">
-        <div class="spinner"></div>
-        <span>Generating questions...</span>
-      </div>
-      <div id="questions-container"></div>
-      <div id="questions-actions" style="display:none">
-        <button id="btn-back-1" class="btn-secondary">Back</button>
-        <button id="btn-generate" class="btn-primary">Generate</button>
-      </div>
+      <h2>Pick a voice</h2>
+      <div id="persona-cards"></div>
+      <button id="btn-back-1" class="btn-secondary full-width" style="margin-top:12px">Back</button>
     </section>
 
     <!-- Step 3: Results -->
@@ -83,10 +67,10 @@
       <div id="results-container"></div>
       <div id="results-refinements" style="display:none">
         <div class="refine-buttons">
-          <button class="refine-btn" data-tone="professional">Professional</button>
           <button class="refine-btn" data-tone="shorter">Shorter</button>
-          <button class="refine-btn" data-tone="provocative">Provocative</button>
-          <button class="refine-btn" data-tone="funnier">Funnier</button>
+          <button class="refine-btn" data-tone="spicier">Spicier</button>
+          <button class="refine-btn" data-tone="softer">Softer</button>
+          <button class="refine-btn" data-tone="more specific">More specific</button>
         </div>
         <div class="custom-refine">
           <input type="text" id="refine-input" placeholder="Custom direction..." />

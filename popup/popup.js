@@ -1,12 +1,11 @@
 // Tweet Bot - Toolbar Popup (New Tweet Composer)
-// 3-step flow: Topic → Clarifying Questions → Generate
+// 3-step flow: Topic -> Pick Persona -> Generate
 
 (() => {
   let currentStep = 1;
   let topic = "";
   let threadMode = false;
-  let clarifyingQuestions = [];
-  let clarifyingAnswers = {};
+  let selectedPersona = null;
   let activePort = null;
   let retryIntervals = [];
 
@@ -22,11 +21,8 @@
   const threadCheckbox = document.getElementById("thread-checkbox");
   const btnNext = document.getElementById("btn-next");
 
-  const questionsLoading = document.getElementById("questions-loading");
-  const questionsContainer = document.getElementById("questions-container");
-  const questionsActions = document.getElementById("questions-actions");
+  const personaCards = document.getElementById("persona-cards");
   const btnBack1 = document.getElementById("btn-back-1");
-  const btnGenerate = document.getElementById("btn-generate");
 
   const resultsLoading = document.getElementById("results-loading");
   const resultsStreaming = document.getElementById("results-streaming");
@@ -42,7 +38,6 @@
   const gearBtn = document.getElementById("gear-btn");
   const quickSettings = document.getElementById("quick-settings");
   const quickModel = document.getElementById("quick-model");
-  const quickTone = document.getElementById("quick-tone");
   const costBadge = document.getElementById("cost-badge");
   const quickTokens = document.getElementById("quick-tokens");
   const allSettingsLink = document.getElementById("all-settings-link");
@@ -83,152 +78,49 @@
     topic = topicInput.value.trim();
     threadMode = threadCheckbox.checked;
     goToStep(2);
-    generateClarifyingQuestions();
+    renderPersonaCards();
   }
 
-  // ─── Step 2: Clarifying Questions ─────────────────────────────────────────────
+  // ─── Step 2: Pick Persona ──────────────────────────────────────────────────────
 
-  function generateClarifyingQuestions() {
-    questionsLoading.style.display = "flex";
-    questionsContainer.innerHTML = "";
-    questionsActions.style.display = "none";
-
-    disconnectPort();
-
-    const port = chrome.runtime.connect({ name: "tweetbot-stream" });
-    activePort = port;
-    let accumulated = "";
-
-    port.onMessage.addListener((msg) => {
-      if (activePort !== port) return;
-
-      if (msg.type === "CHUNK") {
-        accumulated = msg.accumulated;
-      } else if (msg.type === "DONE") {
-        activePort = null;
-        clarifyingQuestions = parseQuestions(msg.suggestions);
-        renderQuestions();
-        loadCostBadge();
-      } else if (msg.type === "ERROR") {
-        activePort = null;
-        questionsLoading.style.display = "none";
-        // Fall back: show generate button without questions
-        clarifyingQuestions = [];
-        renderQuestions();
-        showQuestionsError(msg.error);
+  function renderPersonaCards() {
+    chrome.runtime.sendMessage({ type: "GET_PERSONAS" }, (personas) => {
+      if (!personas || personas.error) {
+        // Fallback personas
+        personas = {
+          builder: { name: "The Builder", emoji: "\u{1F6E0}\u{FE0F}", tagline: "Optimistic, first-principles, PG-style", color: "green" },
+          shitposter: { name: "The Shitposter", emoji: "\u{1F480}", tagline: "Absurdist, unhinged, chaotic humor", color: "purple" },
+          contrarian: { name: "The Contrarian", emoji: "\u{1F525}", tagline: "Challenges conventional wisdom with receipts", color: "orange" },
+        };
       }
-    });
 
-    port.onDisconnect.addListener(() => {
-      if (activePort === port) {
-        activePort = null;
-        // Try to parse what we have
-        if (accumulated) {
-          clarifyingQuestions = parseQuestionsFromText(accumulated);
-          renderQuestions();
-        }
-      }
-    });
-
-    port.postMessage({
-      type: "GENERATE_CLARIFYING_QUESTIONS_STREAM",
-      payload: { topic, threadMode },
-    });
-  }
-
-  function parseQuestions(suggestions) {
-    // suggestions come back as array of {tag, text} from parseSuggestions
-    return suggestions.map((s) => {
-      const text = typeof s === "string" ? s : s.text;
-      return text;
-    });
-  }
-
-  function parseQuestionsFromText(text) {
-    const questions = [];
-    const lines = text.split("\n");
-    let current = null;
-
-    for (const line of lines) {
-      const match = line.match(/^\s*(\d)[.):\s]\s*(.+)/);
-      if (match) {
-        if (current) questions.push(current);
-        current = match[2].trim();
-      } else if (current && line.trim()) {
-        current += " " + line.trim();
-      }
-    }
-    if (current) questions.push(current);
-    return questions.slice(0, 3);
-  }
-
-  function renderQuestions() {
-    questionsLoading.style.display = "none";
-
-    if (clarifyingQuestions.length === 0) {
-      // No questions generated, let user proceed directly
-      questionsContainer.innerHTML = `<p style="color:#71767b;font-size:13px;text-align:center;padding:12px 0;">No clarifying questions needed. Click Generate to continue.</p>`;
-    } else {
-      questionsContainer.innerHTML = clarifyingQuestions
-        .map((q, i) => `
-          <div class="question-group">
-            <label class="question-label">${escapeHTML(q)}</label>
-            <input type="text" class="question-input" data-index="${i}" placeholder="Your answer (optional)" />
-          </div>
+      personaCards.innerHTML = Object.entries(personas)
+        .map(([key, p]) => `
+          <button class="persona-card persona-${p.color}" data-persona="${key}">
+            <span class="persona-emoji">${p.emoji}</span>
+            <div class="persona-info">
+              <span class="persona-name">${escapeHTML(p.name)}</span>
+              <span class="persona-tagline">${escapeHTML(p.tagline)}</span>
+            </div>
+          </button>
         `)
         .join("");
 
-      // Restore previous answers if user came back
-      questionsContainer.querySelectorAll(".question-input").forEach((input) => {
-        const idx = input.dataset.index;
-        if (clarifyingAnswers[idx]) {
-          input.value = clarifyingAnswers[idx];
-        }
+      personaCards.querySelectorAll(".persona-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          selectedPersona = card.dataset.persona;
+          goToStep(3);
+          generateTweet();
+        });
       });
-    }
-
-    questionsActions.style.display = "flex";
-  }
-
-  function showQuestionsError(message) {
-    const errEl = document.createElement("p");
-    errEl.style.cssText = "color:#f4212e;font-size:13px;padding:8px 0;";
-    errEl.textContent = message;
-    questionsContainer.prepend(errEl);
-  }
-
-  function collectAnswers() {
-    clarifyingAnswers = {};
-    questionsContainer.querySelectorAll(".question-input").forEach((input) => {
-      const idx = input.dataset.index;
-      if (input.value.trim()) {
-        clarifyingAnswers[idx] = input.value.trim();
-      }
     });
   }
 
   btnBack1.addEventListener("click", () => {
-    collectAnswers();
     goToStep(1);
   });
 
-  btnGenerate.addEventListener("click", () => {
-    collectAnswers();
-    goToStep(3);
-    generateTweet();
-  });
-
   // ─── Step 3: Results ──────────────────────────────────────────────────────────
-
-  function buildClarifyingContext() {
-    if (clarifyingQuestions.length === 0) return "";
-    let context = "";
-    clarifyingQuestions.forEach((q, i) => {
-      const answer = clarifyingAnswers[i] || "(no answer)";
-      context += `Q: ${q}\nA: ${answer}\n\n`;
-    });
-    return context.trim();
-  }
 
   function generateTweet(options = {}, retryCount = 0) {
     resultsLoading.style.display = "flex";
@@ -246,7 +138,7 @@
       action: "new",
       newTweetTopic: topic,
       threadMode,
-      clarifyingContext: buildClarifyingContext(),
+      persona: selectedPersona,
       ...options,
     };
 
@@ -511,7 +403,6 @@
     chrome.runtime.sendMessage({ type: "GET_SETTINGS" }, (settings) => {
       if (settings && !settings.error) {
         quickModel.value = settings.selectedModel;
-        quickTone.value = settings.defaultTone;
       }
     });
   }
@@ -532,10 +423,6 @@
 
   quickModel.addEventListener("change", () => {
     chrome.storage.local.set({ selectedModel: quickModel.value });
-  });
-
-  quickTone.addEventListener("change", () => {
-    chrome.storage.local.set({ defaultTone: quickTone.value });
   });
 
   allSettingsLink.addEventListener("click", (e) => {

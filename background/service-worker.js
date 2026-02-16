@@ -6,6 +6,32 @@ const DEFAULT_MODEL = "anthropic/claude-haiku-4-5";
 const MAX_HISTORY = 200;
 const HISTORY_CONTEXT_COUNT = 10;
 
+// ─── Personas ─────────────────────────────────────────────────────────────────
+
+const PERSONAS = {
+  builder: {
+    name: "The Builder",
+    emoji: "\u{1F6E0}\u{FE0F}",
+    tagline: "Optimistic, first-principles, PG-style",
+    color: "green",
+    systemPromptFragment: `You are "The Builder." Your voice is optimistic, first-principles, Paul Graham-style. You think in systems. You're excited about makers and people who build things. You're specific and concrete — never hand-wavy. Warm, clear, genuinely curious. You see the world through the lens of "what could be built here?" Occasionally funny but substance over cleverness. You sound like a smart friend who ships side projects and reads Hacker News but isn't annoying about it.`,
+  },
+  shitposter: {
+    name: "The Shitposter",
+    emoji: "\u{1F480}",
+    tagline: "Absurdist, unhinged, chaotic humor",
+    color: "purple",
+    systemPromptFragment: `You are "The Shitposter." Your voice is absurdist, unhinged, chaotic humor. Zero filter. Lowercase vibes preferred. You're self-aware and terminally online. You aim for the sharp exhale through the nose — not trying too hard, just the right amount of unhinged. You reference internet culture naturally. Short, punchy, unexpected. Sometimes just a single devastating sentence. Never explain the joke. Never use hashtags. Emojis only if ironic.`,
+  },
+  contrarian: {
+    name: "The Contrarian",
+    emoji: "\u{1F525}",
+    tagline: "Challenges conventional wisdom with receipts",
+    color: "orange",
+    systemPromptFragment: `You are "The Contrarian." You challenge conventional wisdom — but with receipts. "Actually..." energy, but earned. Bold, sharp, occasionally sardonic. You don't do rage-bait or cheap dunks. You genuinely see angles others miss and aren't afraid to say it. You back claims with specifics, not vibes. Think "the friend who's annoyingly right." Confident but not arrogant. You question assumptions, not people.`,
+  },
+};
+
 // ─── Message Router ───────────────────────────────────────────────────────────
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -53,6 +79,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === "GET_PERSONAS") {
+    sendResponse(PERSONAS);
+    return false;
+  }
+
   if (message.type === "OPEN_SETTINGS") {
     chrome.runtime.openOptionsPage();
     return false;
@@ -64,13 +95,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 async function getSettings() {
   const data = await chrome.storage.local.get([
     "apiKey",
+    "defaultPersona",
     "defaultTone",
     "topicInterests",
     "selectedModel",
   ]);
+
+  // Auto-migrate from old tone system
+  let persona = data.defaultPersona;
+  if (!persona && data.defaultTone) {
+    const toneMap = {
+      witty: "builder",
+      professional: "builder",
+      informative: "builder",
+      casual: "shitposter",
+      provocative: "contrarian",
+    };
+    persona = toneMap[data.defaultTone] || "builder";
+    // Persist migration
+    await chrome.storage.local.set({ defaultPersona: persona });
+  }
+
   return {
     apiKey: data.apiKey || "",
-    defaultTone: data.defaultTone || "witty",
+    defaultPersona: persona || "builder",
     topicInterests: data.topicInterests || [],
     selectedModel: data.selectedModel || DEFAULT_MODEL,
   };
@@ -175,25 +223,33 @@ async function fetchImageAsBase64(url) {
 
 // ─── Prompt Building ──────────────────────────────────────────────────────────
 
-function buildSystemPrompt(settings, selectedHistory) {
-  const tone = settings.defaultTone || "witty";
-  const topics = settings.topicInterests || [];
-
-  let prompt = `You generate Twitter/X replies. You sound like a real person, not a bot.
-
-TONE: ${tone}
-- witty: Sharp, clear thinking with quiet optimism. Paul Graham style — first-principles reasoning, genuine curiosity, hopeful about builders and making things. Occasionally funny but substance over cleverness.
-- professional: Thoughtful, authoritative, well-reasoned. No corporate speak.
-- casual: Texting a smart friend.
-- provocative: Bold, contrarian, thought-provoking. Challenge assumptions.
-- informative: Educational, adds value, shares knowledge. No lecturing.
-
-Apply the "${tone}" tone to all suggestions.
-
+const ANTI_SLOP_RULES = `
 WRITING STYLE:
 Never use these words: align, crucial, delve, elaborate, emphasize, enhance, enduring, foster, garner, highlight, intricate, interplay, pivotal, showcase, tapestry, underscore, bolster, landscape, realm, arguably, innovative, groundbreaking, transformative, utilize, leverage, synergy, game-changer, unpack, the real unlock.
 Never use these patterns: "Not only... but also...", "Despite these challenges...", "In conclusion", "From X to Y", "It's worth noting that", "plays a pivotal role", rule-of-three filler lists, rhetorical questions that answer themselves.
 No exaggeration. No filler. No moralizing. No disclaimers. No em dashes. No flowery language. Vary sentence rhythm. Be specific and concrete. Occasionally opinionated, never sycophantic.`;
+
+const SUGGESTION_RULES = `
+RULES:
+- Each suggestion must be under 280 characters
+- Make each suggestion distinct in approach/angle
+- No hashtags unless the original tweet uses them
+- No emojis unless the tone calls for it
+- Do NOT start multiple suggestions with the same word or phrase
+- Match the energy level of the conversation
+- If images are included, reference what you see in them naturally
+- If the original tweet is not in English, generate your suggestions in the same language as the original tweet
+- Prefix each suggestion with a rhetorical strategy tag in square brackets, e.g. [contrarian take], [empathy hook]. Format: N. [tag] tweet text. The tag does NOT count toward the 280 character limit`;
+
+function buildSystemPrompt(persona, settings, selectedHistory, opts = {}) {
+  const personaData = PERSONAS[persona] || PERSONAS.builder;
+  const topics = settings.topicInterests || [];
+  const count = opts.count || 3;
+
+  let prompt = `You generate Twitter/X posts. You sound like a real person, not a bot.
+
+${personaData.systemPromptFragment}
+${ANTI_SLOP_RULES}`;
 
   if (topics.length > 0) {
     prompt += `\n\nThe user is interested in these topics: ${topics.join(", ")}. Reference these naturally when relevant.`;
@@ -206,17 +262,39 @@ No exaggeration. No filler. No moralizing. No disclaimers. No em dashes. No flow
     });
   }
 
-  prompt += `\n\nRULES:
-- Generate exactly 3 suggestions, numbered 1-3
-- Each suggestion must be under 280 characters
-- Make each suggestion distinct in approach/angle
-- No hashtags unless the original tweet uses them
-- No emojis unless the tone calls for it
-- Do NOT start multiple suggestions with the same word or phrase
-- Match the energy level of the conversation
-- If images are included, reference what you see in them naturally
-- If the original tweet is not in English, generate your suggestions in the same language as the original tweet
-- Prefix each suggestion with a rhetorical strategy tag in square brackets, e.g. [contrarian take], [empathy hook]. Format: 1. [tag] tweet text. The tag does NOT count toward the 280 character limit`;
+  prompt += `\n\n- Generate exactly ${count} suggestions, numbered 1-${count}
+${SUGGESTION_RULES}`;
+
+  return prompt;
+}
+
+function buildMultiPersonaSystemPrompt(settings, selectedHistory) {
+  const topics = settings.topicInterests || [];
+
+  let prompt = `You generate Twitter/X posts. You sound like a real person, not a bot. You will generate 3 suggestions, each in a different persona voice.
+
+PERSONA 1 — The Builder: ${PERSONAS.builder.systemPromptFragment}
+
+PERSONA 2 — The Shitposter: ${PERSONAS.shitposter.systemPromptFragment}
+
+PERSONA 3 — The Contrarian: ${PERSONAS.contrarian.systemPromptFragment}
+${ANTI_SLOP_RULES}`;
+
+  if (topics.length > 0) {
+    prompt += `\n\nThe user is interested in these topics: ${topics.join(", ")}. Reference these naturally when relevant.`;
+  }
+
+  if (selectedHistory.length > 0) {
+    prompt += `\n\nHere are tweets the user has previously liked and selected. Match this voice and style:\n`;
+    selectedHistory.forEach((entry, i) => {
+      prompt += `${i + 1}. [${entry.action}] "${entry.text}"\n`;
+    });
+  }
+
+  prompt += `\n\nGenerate exactly 3 suggestions. #1 as The Builder, #2 as The Shitposter, #3 as The Contrarian.
+Format each as: N. [PersonaName] [strategy tag] tweet text
+Example: 1. [Builder] [first-principles] tweet text here
+${SUGGESTION_RULES}`;
 
   return prompt;
 }
@@ -233,10 +311,6 @@ function buildUserPrompt(payload) {
       prompt = `Generate a thread of 3-5 tweets about: ${topic}. Number each tweet with [1/N] format (e.g. [1/4], [2/4]). Each tweet must be under 280 characters. The first tweet should hook the reader, and the last should conclude or provide a call to action.`;
     } else {
       prompt = `Generate 3 original tweet ideas about: ${topic}`;
-    }
-
-    if (payload.clarifyingContext) {
-      prompt += `\n\nAdditional context from user:\n${payload.clarifyingContext}`;
     }
 
     if (refineTone) prompt += `\nAdjust tone to be more: ${refineTone}`;
@@ -398,54 +472,6 @@ chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== "tweetbot-stream") return;
 
   port.onMessage.addListener(async (message) => {
-    // ─── Clarifying Questions Handler ──────────────────────────────────────────
-    if (message.type === "GENERATE_CLARIFYING_QUESTIONS_STREAM") {
-      const { topic, threadMode } = message.payload;
-
-      try {
-        const settings = await getSettings();
-
-        if (!settings.apiKey) {
-          throw new Error("API key not configured. Please set it in the extension settings.");
-        }
-
-        const systemPrompt = "You are a tweet writing assistant. Given a topic, generate exactly 3 short clarifying questions that will help you write a better tweet. Number them 1-3. Each question should be one sentence. Focus on: target audience, desired angle/hook, and key message.";
-
-        let userPrompt = `Topic: ${topic}`;
-        if (threadMode) {
-          userPrompt += "\nThe user wants to generate a thread (3-5 tweets).";
-        }
-
-        const responseText = await callOpenRouterAPIStreaming(
-          systemPrompt,
-          [{ type: "text", text: userPrompt }],
-          settings.apiKey,
-          settings.selectedModel,
-          (delta, accumulated) => {
-            try {
-              port.postMessage({ type: "CHUNK", accumulated });
-            } catch {}
-          }
-        );
-
-        const suggestions = parseSuggestions(responseText);
-
-        try {
-          port.postMessage({ type: "DONE", suggestions, historyId: null, isThread: false });
-        } catch {}
-      } catch (err) {
-        try {
-          const errorMsg = { type: "ERROR", error: err.message };
-          if (err.rateLimited) {
-            errorMsg.rateLimited = true;
-            errorMsg.retryAfterSeconds = err.retryAfterSeconds;
-          }
-          port.postMessage(errorMsg);
-        } catch {}
-      }
-      return;
-    }
-
     if (message.type !== "GENERATE_SUGGESTIONS_STREAM") return;
 
     const payload = message.payload;
@@ -457,12 +483,17 @@ chrome.runtime.onConnect.addListener((port) => {
         throw new Error("API key not configured. Please set it in the extension settings.");
       }
 
-      if (payload.tone) {
-        settings.defaultTone = payload.tone;
+      const selectedHistory = await getSelectedHistory();
+
+      // Build system prompt: multi-persona or single persona
+      let systemPrompt;
+      if (payload.multiPersona) {
+        systemPrompt = buildMultiPersonaSystemPrompt(settings, selectedHistory);
+      } else {
+        const persona = payload.persona || settings.defaultPersona;
+        systemPrompt = buildSystemPrompt(persona, settings, selectedHistory);
       }
 
-      const selectedHistory = await getSelectedHistory();
-      const systemPrompt = buildSystemPrompt(settings, selectedHistory);
       const userPromptText = buildUserPrompt(payload);
 
       const userContent = [];
@@ -503,7 +534,7 @@ chrome.runtime.onConnect.addListener((port) => {
       );
 
       const isThread = !!payload.threadMode;
-      const suggestions = isThread ? parseThread(responseText) : parseSuggestions(responseText);
+      const suggestions = isThread ? parseThread(responseText) : parseSuggestions(responseText, payload.multiPersona);
 
       const historyEntry = {
         id: crypto.randomUUID(),
@@ -516,7 +547,7 @@ chrome.runtime.onConnect.addListener((port) => {
         selectedIndex: null,
         selected: false,
         text: null,
-        tone: settings.defaultTone,
+        persona: payload.persona || (payload.multiPersona ? "multi" : settings.defaultPersona),
         refinement: payload.customRefinement || null,
       };
 
@@ -553,7 +584,16 @@ function extractStrategyTag(text) {
   return { tag: null, text };
 }
 
-function parseSuggestions(text) {
+function extractPersonaLabel(text) {
+  // Match [Builder], [Shitposter], [Contrarian] (case-insensitive)
+  const match = text.match(/^\[(builder|shitposter|contrarian)\]\s*/i);
+  if (match) {
+    return { persona: match[1].toLowerCase(), text: text.slice(match[0].length) };
+  }
+  return { persona: null, text };
+}
+
+function parseSuggestions(text, multiPersona = false) {
   const suggestions = [];
   // Match numbered lines: "1. text", "1) text", "1: text"
   const lines = text.split("\n");
@@ -579,10 +619,24 @@ function parseSuggestions(text) {
       .map((s) => s.trim())
       .filter((s) => s.length > 0)
       .slice(0, 3);
-    return fallback.map((s) => extractStrategyTag(s));
+    return fallback.map((s) => {
+      const { tag, text: tagText } = extractStrategyTag(s);
+      return { tag, text: tagText, persona: null };
+    });
   }
 
-  return suggestions.slice(0, 3).map((s) => extractStrategyTag(s));
+  const personaOrder = ["builder", "shitposter", "contrarian"];
+
+  return suggestions.slice(0, 3).map((s, i) => {
+    if (multiPersona) {
+      // Extract persona label first, then strategy tag
+      const { persona, text: afterPersona } = extractPersonaLabel(s);
+      const { tag, text: finalText } = extractStrategyTag(afterPersona);
+      return { tag, text: finalText, persona: persona || personaOrder[i] };
+    }
+    const { tag, text: finalText } = extractStrategyTag(s);
+    return { tag, text: finalText, persona: null };
+  });
 }
 
 function parseThread(text) {
@@ -644,20 +698,22 @@ async function handleGenerateSuggestions(payload) {
     );
   }
 
-  // Override tone if specified in payload
-  if (payload.tone) {
-    settings.defaultTone = payload.tone;
+  const selectedHistory = await getSelectedHistory();
+
+  // Build system prompt: multi-persona or single persona
+  let systemPrompt;
+  if (payload.multiPersona) {
+    systemPrompt = buildMultiPersonaSystemPrompt(settings, selectedHistory);
+  } else {
+    const persona = payload.persona || settings.defaultPersona;
+    systemPrompt = buildSystemPrompt(persona, settings, selectedHistory);
   }
 
-  const selectedHistory = await getSelectedHistory();
-  const systemPrompt = buildSystemPrompt(settings, selectedHistory);
   const userPromptText = buildUserPrompt(payload);
 
   // Build user content - may include images (OpenAI vision format)
   const userContent = [];
 
-  // Add images if present (OpenAI vision format)
-  // Try URL-based first; fall back to base64 if the URL might be restricted
   if (payload.tweetData && payload.tweetData.imageUrls && payload.tweetData.imageUrls.length > 0) {
     for (const url of payload.tweetData.imageUrls) {
       const imageData = await fetchImageAsBase64(url);
@@ -669,7 +725,6 @@ async function handleGenerateSuggestions(payload) {
           },
         });
       } else {
-        // Fallback: pass the URL directly and hope the model can fetch it
         userContent.push({
           type: "image_url",
           image_url: { url },
@@ -686,7 +741,7 @@ async function handleGenerateSuggestions(payload) {
     settings.apiKey,
     settings.selectedModel
   );
-  const suggestions = parseSuggestions(responseText);
+  const suggestions = parseSuggestions(responseText, !!payload.multiPersona);
 
   // Save to history
   const historyEntry = {
@@ -700,7 +755,7 @@ async function handleGenerateSuggestions(payload) {
     selectedIndex: null,
     selected: false,
     text: null,
-    tone: settings.defaultTone,
+    persona: payload.persona || (payload.multiPersona ? "multi" : settings.defaultPersona),
     refinement: payload.customRefinement || null,
   };
 

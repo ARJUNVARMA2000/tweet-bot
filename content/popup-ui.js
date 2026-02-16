@@ -8,6 +8,20 @@ const PopupUI = (() => {
   let currentAction = "reply";
   let activePort = null;
 
+  const PERSONA_DISPLAY = {
+    builder: { name: "The Builder", color: "green" },
+    shitposter: { name: "The Shitposter", color: "purple" },
+    contrarian: { name: "The Contrarian", color: "orange" },
+  };
+
+  function getPersonaDisplayName(key) {
+    return PERSONA_DISPLAY[key]?.name || key;
+  }
+
+  function getPersonaColor(key) {
+    return PERSONA_DISPLAY[key]?.color || "green";
+  }
+
   function detectTheme() {
     const bg = window.getComputedStyle(document.body).backgroundColor;
     if (!bg) return "dark";
@@ -104,10 +118,10 @@ const PopupUI = (() => {
 
       <div class="tweetbot-refinements" style="display:none">
         <div class="tweetbot-refine-buttons">
-          <button class="tweetbot-refine-btn" data-tone="professional">Professional</button>
           <button class="tweetbot-refine-btn" data-tone="shorter">Shorter</button>
-          <button class="tweetbot-refine-btn" data-tone="provocative">Provocative</button>
-          <button class="tweetbot-refine-btn" data-tone="funnier">Funnier</button>
+          <button class="tweetbot-refine-btn" data-tone="spicier">Spicier</button>
+          <button class="tweetbot-refine-btn" data-tone="softer">Softer</button>
+          <button class="tweetbot-refine-btn" data-tone="more specific">More specific</button>
         </div>
         <div class="tweetbot-custom-refine">
           <input type="text" class="tweetbot-refine-input" placeholder="Custom direction..." />
@@ -207,6 +221,7 @@ const PopupUI = (() => {
     const payload = {
       action: currentAction,
       tweetData: currentTweetData,
+      multiPersona: true,
       ...options,
     };
 
@@ -305,6 +320,11 @@ const PopupUI = (() => {
     return suggestion.tag || null;
   }
 
+  function getSuggestionPersona(suggestion) {
+    if (typeof suggestion === "string") return null;
+    return suggestion.persona || null;
+  }
+
   function renderSuggestions(popup, suggestions) {
     const container = popup.querySelector(".tweetbot-suggestions");
     const refinements = popup.querySelector(".tweetbot-refinements");
@@ -313,11 +333,16 @@ const PopupUI = (() => {
       .map((suggestion, i) => {
         const text = getSuggestionText(suggestion);
         const tag = getSuggestionTag(suggestion);
+        const persona = getSuggestionPersona(suggestion);
         const tagHTML = tag
           ? `<div class="tweetbot-strategy-tag">${escapeHTML(tag)}</div>`
           : "";
+        const personaBadgeHTML = persona
+          ? `<div class="tweetbot-persona-badge tweetbot-persona-${getPersonaColor(persona)}">${escapeHTML(getPersonaDisplayName(persona))}</div>`
+          : "";
         return `
       <div class="tweetbot-suggestion" data-index="${i}">
+        ${personaBadgeHTML}
         ${tagHTML}
         <div class="tweetbot-suggestion-text">${escapeHTML(text)}</div>
         <div class="tweetbot-suggestion-actions">

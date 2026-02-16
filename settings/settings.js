@@ -30,6 +30,7 @@ let topics = [];
 async function loadSettings() {
   const data = await chrome.storage.local.get([
     "apiKey",
+    "defaultPersona",
     "defaultTone",
     "selectedModel",
     "topicInterests",
@@ -48,10 +49,21 @@ async function loadSettings() {
   const modelRadio = document.querySelector(`input[name="model"][value="${model}"]`);
   if (modelRadio) modelRadio.checked = true;
 
-  // Tone
-  const tone = data.defaultTone || "witty";
-  const radio = document.querySelector(`input[name="tone"][value="${tone}"]`);
-  if (radio) radio.checked = true;
+  // Persona (with backward compat from old tone system)
+  let persona = data.defaultPersona;
+  if (!persona && data.defaultTone) {
+    const toneMap = {
+      witty: "builder",
+      professional: "builder",
+      informative: "builder",
+      casual: "shitposter",
+      provocative: "contrarian",
+    };
+    persona = toneMap[data.defaultTone] || "builder";
+  }
+  persona = persona || "builder";
+  const personaRadio = document.querySelector(`input[name="persona"][value="${persona}"]`);
+  if (personaRadio) personaRadio.checked = true;
 
   // Topics
   topics = data.topicInterests || [];
@@ -142,12 +154,12 @@ elements.tagInput.addEventListener("keydown", (e) => {
 // ─── Save ─────────────────────────────────────────────────────────────────────
 
 elements.save.addEventListener("click", async () => {
-  const tone = document.querySelector('input[name="tone"]:checked')?.value || "witty";
+  const persona = document.querySelector('input[name="persona"]:checked')?.value || "builder";
   const selectedModel = document.querySelector('input[name="model"]:checked')?.value || "anthropic/claude-opus-4-6";
 
   await chrome.storage.local.set({
     apiKey: elements.apiKey.value.trim(),
-    defaultTone: tone,
+    defaultPersona: persona,
     selectedModel,
     topicInterests: topics,
   });
@@ -187,12 +199,12 @@ elements.resetUsage.addEventListener("click", async () => {
 
 // ─── Export / Import ──────────────────────────────────────────────────────────
 
-const EXPORT_KEYS = ["apiKey", "defaultTone", "selectedModel", "topicInterests", "tweetHistory", "stats", "tokenUsage"];
+const EXPORT_KEYS = ["apiKey", "defaultPersona", "defaultTone", "selectedModel", "topicInterests", "tweetHistory", "stats", "tokenUsage"];
 
 elements.exportBtn.addEventListener("click", async () => {
   const data = await chrome.storage.local.get(EXPORT_KEYS);
   data._app = "tweet-bot";
-  data._exportVersion = 1;
+  data._exportVersion = 2;
 
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -232,6 +244,18 @@ elements.importFile.addEventListener("change", async (e) => {
       if (key in data) {
         toSet[key] = data[key];
       }
+    }
+
+    // Backward compat: migrate defaultTone to defaultPersona on import
+    if (data.defaultTone && !data.defaultPersona) {
+      const toneMap = {
+        witty: "builder",
+        professional: "builder",
+        informative: "builder",
+        casual: "shitposter",
+        provocative: "contrarian",
+      };
+      toSet.defaultPersona = toneMap[data.defaultTone] || "builder";
     }
 
     await chrome.storage.local.set(toSet);

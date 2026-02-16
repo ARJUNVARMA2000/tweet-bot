@@ -562,6 +562,33 @@
   text-decoration: underline;
 }
 
+/* ─── Persona Badges ──────────────────────────────────────────────────────── */
+
+.tweetbot-persona-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.tweetbot-persona-green {
+  background: rgba(0, 186, 124, 0.15);
+  color: rgb(0, 186, 124);
+}
+
+.tweetbot-persona-purple {
+  background: rgba(168, 85, 247, 0.15);
+  color: rgb(168, 85, 247);
+}
+
+.tweetbot-persona-orange {
+  background: rgba(249, 115, 22, 0.15);
+  color: rgb(249, 115, 22);
+}
+
 /* ─── Streaming ───────────────────────────────────────────────────────────── */
 
 .tweetbot-suggestion-streaming {
