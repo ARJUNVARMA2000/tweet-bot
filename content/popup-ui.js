@@ -59,10 +59,9 @@ const PopupUI = (() => {
     const popup = document.createElement("div");
     popup.className = `tweetbot-popup tweetbot-theme-${theme}`;
 
-    // Position below the button
+    // Position above the button (preferred) or below if not enough space
     const rect = anchorBtn.getBoundingClientRect();
     popup.style.position = "fixed";
-    popup.style.top = `${rect.bottom + 8}px`;
     popup.style.left = `${Math.max(8, rect.left - 150)}px`;
     popup.style.zIndex = "999999";
 
@@ -70,14 +69,21 @@ const PopupUI = (() => {
     document.body.appendChild(popup);
     currentPopup = popup;
 
-    // Reposition if off-screen
+    // Position: prefer above the button, fall back to below
     requestAnimationFrame(() => {
       const popupRect = popup.getBoundingClientRect();
+
+      // Try above first
+      const aboveTop = rect.top - popupRect.height - 8;
+      if (aboveTop >= 8) {
+        popup.style.top = `${aboveTop}px`;
+      } else {
+        // Fall back to below if not enough space above
+        popup.style.top = `${rect.bottom + 8}px`;
+      }
+
       if (popupRect.right > window.innerWidth - 8) {
         popup.style.left = `${window.innerWidth - popupRect.width - 8}px`;
-      }
-      if (popupRect.bottom > window.innerHeight - 8) {
-        popup.style.top = `${rect.top - popupRect.height - 8}px`;
       }
     });
 
