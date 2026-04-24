@@ -1,68 +1,80 @@
-# Tweet Bot — AI Tweet Suggestions
+# Tweet Bot
 
-A Chrome extension that generates tweet replies, quote tweets, and original tweets using Claude via OpenRouter.
+AI-powered Chrome extension that generates tweet replies, quote tweets, and threads using Claude via OpenRouter. Rhetorical-strategy tagged suggestions, image understanding, voice learning, real-time streaming.
 
-## Features
+- **Portfolio:** https://arjun-varma.com/
 
-- **AI-powered suggestions** — Get 3 distinct tweet suggestions with different rhetorical angles
-- **Multiple actions** — Reply, quote tweet, or compose new tweets
-- **Tone control** — Witty, professional, casual, provocative, or informative
-- **Thread mode** — Generate multi-tweet threads on any topic
-- **Image understanding** — Analyzes images in tweets for context-aware replies
-- **Voice learning** — Tracks which suggestions you pick to match your style over time
-- **Streaming** — Responses stream in real-time as they're generated
-- **Model selection** — Choose between Claude Opus 4.6, Sonnet 4.5, or Haiku 4.5
-- **Usage tracking** — Monitor token usage and estimated costs
-- **Export/Import** — Back up and restore all settings and history
+## Problem
 
-## Setup
+Social media engagement on X/Twitter requires quick, thoughtful responses that maintain your authentic voice. Crafting the right reply, quote tweet, or thread takes time and mental energy — especially when you want to contribute meaningfully at scale.
 
-1. Clone this repo
-2. Go to `chrome://extensions` in Chrome
-3. Enable **Developer mode** (top right)
-4. Click **Load unpacked** and select this folder
-5. Open the extension settings and paste your [OpenRouter API key](https://openrouter.ai/keys)
+Goal: an AI assistant that integrates directly into the Twitter experience and provides context-aware suggestions that match your personal style.
 
-## Project Structure
+## Challenge
 
-```
-Tweet Bot/
-├── manifest.json              # Extension manifest (v3)
-├── background/
-│   └── service-worker.js      # API calls, streaming, history, prompt building
-├── content/
-│   ├── content.js             # Main content script orchestrator
-│   ├── tweet-extractor.js     # Extracts tweet data from the DOM
-│   ├── ui-injector.js         # Injects AI buttons into tweet actions
-│   └── popup-ui.js            # Suggestion popup UI
-├── settings/
-│   ├── settings.html          # Settings page
-│   ├── settings.js            # Settings logic
-│   └── settings.css           # Settings styles
-├── styles/
-│   └── content.css            # Injected content styles
-└── icons/                     # Extension icons (16, 32, 48, 128)
+- Twitter/X's DOM structure is complex and frequently changes, making reliable element detection hard
+- Extracting full context (tweet text, author, thread history, images) requires sophisticated DOM traversal
+- Suggestions must feel authentic and match the user's voice, not generic AI output
+- Streaming responses must be smooth and non-disruptive
+- Chrome Extension Manifest V3 restrictions limit background processing capabilities
+
+## Approach
+
+1. **DOM injection** — content scripts inject AI buttons directly into every tweet's action bar, blending with native UI
+2. **Context extraction** — sophisticated tweet parser captures text, author, thread context, and image content for multimodal understanding
+3. **Voice learning** — tracks which suggestions the user selects over time and adapts future prompts to match their style
+4. **Multi-model support** — integration with Claude Opus / Sonnet / Haiku via OpenRouter for different quality/speed tradeoffs
+
+## Solution / Architecture
+
+```mermaid
+flowchart LR
+    DOM[Tweet DOM] --> CS[Content script]
+    CS --> Ctx[Context extractor<br/>text + thread + image]
+    Ctx --> SW[Service worker]
+    SW --> OR[OpenRouter API]
+    OR --> M1[Claude Opus]
+    OR --> M2[Claude Sonnet]
+    OR --> M3[Claude Haiku]
+    M1 --> SW
+    SW --> POP[Popup UI<br/>3 suggestions + tags]
+    POP --> VL[Selection history<br/>→ voice learning]
 ```
 
-## How It Works
+**Components:**
 
-1. The extension injects an AI button into every tweet's action bar on X/Twitter
-2. Clicking it extracts the tweet text, author, thread context, and images
-3. A popup appears and streams suggestions from Claude via OpenRouter
-4. Each suggestion has a rhetorical strategy tag (e.g. [contrarian take], [empathy hook])
-5. Click a suggestion to copy it into the reply box
-6. Your selections are saved to train future suggestions toward your voice
+- **Service worker backend** — API calls, streaming, prompt building, selection history tracking
+- **Content scripts** — DOM injection, tweet extraction, popup UI rendering
+- **Tone control system** — five rhetorical modes (witty, professional, casual, provocative, informative) with tagged strategy labels like `[contrarian take]`, `[empathy hook]`
+- **Thread mode** — generate coherent multi-tweet threads on any topic
+- **Settings dashboard** — model selection, usage tracking with cost estimates, export/import
 
-## Models
+Each suggestion comes with a rhetorical strategy tag so users understand the angle.
 
-| Model | Best For | Pricing |
-|-------|----------|---------|
-| **Opus 4.6** | Highest quality, nuanced replies | $5 / $25 per MTok |
-| **Sonnet 4.5** | Good balance of speed and quality | $3 / $15 per MTok |
-| **Haiku 4.5** | Fast, cost-effective | $1 / $5 per MTok |
+## Impact / Results
 
-## Privacy
+- 3 distinct suggestions per request, each with a different rhetorical angle
+- Supports replies, quote tweets, original tweets, and multi-tweet threads
+- Image understanding for context-aware responses to visual content
+- Voice learning system improves suggestions over time
+- Real-time streaming for instant feedback
+- **Full privacy** — API key and history stored locally, no external data collection
 
-- Your API key is stored locally in Chrome storage
-- No data is sent anywhere except OpenRouter's API
-- Tweet history stays on your device
+## Tech Stack
+
+JavaScript · Chrome Extension MV3 · OpenRouter API · Claude Opus / Sonnet / Haiku · CSS
+
+## Run Locally / Load Unpacked
+
+```bash
+git clone https://github.com/ARJUNVARMA2000/tweet-bot.git
+```
+
+1. Open `chrome://extensions`, enable **Developer mode**
+2. **Load unpacked** → select the cloned directory
+3. Open the extension options page and paste your OpenRouter API key
+4. Visit x.com and look for the new action in each tweet's bar
+
+## License
+
+MIT
